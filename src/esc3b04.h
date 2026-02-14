@@ -1,6 +1,33 @@
-#include <Arduino>
+/*
+  ==============================================================================
+                                  DISCLAIMER
+  ==============================================================================
+
+  This software is provided "as is", without warranty of any kind, express or
+  implied, including but not to the warranties of merchantability,
+  fitness for a particular purpose and noninfringement. In no event shall the
+  authors or copyright holders be liable for any claim, damages or other
+  liability, whether in an action of contract, tort or otherwise, arising from,
+  out of or in connection with the software or the use or other dealings in the
+  software.
+
+  ==============================================================================
+                              PERMISSION TO USE
+  ==============================================================================
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so.
+
+  It is highly encouraged that if you find this library useful, you provide
+  attribution back to the original author.
+*/
 #ifndef ESC3B04_h
 #define ESC3B04_h
+#include <Arduino.h>
 enum inputs : uint8_t {
     Vi1 = 0,
     Vi2 = 1,
@@ -10,32 +37,86 @@ enum inputs : uint8_t {
 
 enum outputs : uint8_t {
     CH1 = 5,
-    CH1 = 6,
-    CH1 = 7,
-    CH1 = 10
+    CH2 = 6,
+    CH3 = 7,
+    CH4 = 10
 };
+
+void IRAM_ATTR buttonPress();
 
 class esc3b04 {
     public:
         esc3b04();
+        static volatile uint32_t _buttonCache_ms;
+        static volatile bool _checkButton;
 
-        void init();
+        void init(uint32_t baud = 9600);
 
-        void setOutput();
-        void setOutputs();
-        void getOutput();
+        template<typename T>
+        size_t print(T data) {
+            enableTransmit();
+            size_t bytesWritten = _serial->print(data);
+            _serial->flush();
+            disableTransmit();
+            return bytesWritten;
+        }
+
+        template<typename T>
+        size_t println(T data) {
+            enableTransmit();
+            size_t bytesWritten = _serial->println(data);
+            _serial->flush();
+            disableTransmit();
+            return bytesWritten;
+        }
+
+        template<typename T>
+        size_t write(T data) {
+            enableTransmit();
+            size_t bytesWritten = _serial->write(data);
+            _serial->flush();
+            disableTransmit();
+            return bytesWritten;
+        }
+
+        template<typename T>
+        size_t read(T data) {return _serial->read(data);}
+
+        template<typename T>
+        size_t available(T data) {return _serial->available(data);}
+
+        void setOutput(uint8_t output, bool state);
+        void setOutputs(uint8_t outputs);
+        void getOutput(uint8_t output);
         void getOutputs();
 
-        uint8_t getDigitalInput();
-        uint8_t getDigitalInputs();
-        float getAnalogInput();
+        uint8_t getDigitalInput(uint8_t input);
+        uint8_t getDigitalInputs(uint8_t inputs);
+        float getAnalogInput(uint8_t input);
 
         bool getButtonPressed();
+
+        // Returns true if the communication engine received a valid message.
+        bool getDataReady();
+
+        // Returns if there was a timeout.
+        bool getTimedOut();
+
+        // Returns the received message.
+        char* getReceivedCharacters();
 
         void engineButton();
         void engineAnalogAverage();
         void engineCommunication();
         void engine();
-}
+    private:
+        void enableTransmit();
+        void disableTransmit();
+        static const uint8_t _rxTxPin = 9;
+        static const uint8_t _button = 2;
+        static const uint32_t _debounceTime_ms = 250;
+        bool _buttonPressed = false;
+        HardwareSerial* _serial = &Serial0;
+};
 
 #endif
