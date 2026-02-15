@@ -42,6 +42,12 @@ enum outputs : uint8_t {
     CH4 = 10
 };
 
+enum engineAverageType : uint8_t{
+    DISABLED = 0,
+    TIME_MS = 1,
+    READINGS = 2
+};
+
 void IRAM_ATTR buttonPress();
 
 class esc3b04 {
@@ -50,32 +56,34 @@ class esc3b04 {
         static volatile uint32_t _buttonCache_ms;
         static volatile bool _checkButton;
 
-        void init(uint32_t baud = 9600);
+        void init(uint32_t baud, char startCharacter, char endCharacter, uint16_t timeout = 3000);
+        void init(uint32_t baud = 115200, char endCharacter = '\n', uint16_t timeout = 3000);
+        void systemInit();
 
         template<typename T>
         size_t print(T data) {
-            enableTransmit();
+            enableTransmit(true);
             size_t bytesWritten = _serial->print(data);
             _serial->flush();
-            disableTransmit();
+            enableTransmit(false);
             return bytesWritten;
         }
 
         template<typename T>
         size_t println(T data) {
-            enableTransmit();
+            enableTransmit(true);
             size_t bytesWritten = _serial->println(data);
             _serial->flush();
-            disableTransmit();
+            enableTransmit(false);
             return bytesWritten;
         }
 
         template<typename T>
         size_t write(T data) {
-            enableTransmit();
+            enableTransmit(true);
             size_t bytesWritten = _serial->write(data);
             _serial->flush();
-            disableTransmit();
+            enableTransmit(false);
             return bytesWritten;
         }
 
@@ -85,13 +93,16 @@ class esc3b04 {
         template<typename T>
         size_t available(T data) {return _serial->available(data);}
 
-        void setOutput(uint8_t output, bool state);
-        void setOutputs(uint8_t outputs);
-        void getOutput(uint8_t output);
-        void getOutputs();
+        int8_t setAnalogParameters(uint8_t input, float gain, float offset, );
 
-        uint8_t getDigitalInput(uint8_t input);
-        uint8_t getDigitalInputs(uint8_t inputs);
+        int8_t setOutput(uint8_t output, bool state);
+        int8_t getOutput(uint8_t output);
+
+        int8_t setOutputs(uint8_t outputs);
+        int8_t getOutputs();
+
+        int8_t getDigitalInput(uint8_t input);
+        int8_t getDigitalInputs();
         float getAnalogInput(uint8_t input);
 
         bool getButtonPressed();
@@ -110,12 +121,39 @@ class esc3b04 {
         void engineCommunication();
         void engine();
     private:
-        void enableTransmit();
-        void disableTransmit();
-        static const uint8_t _rxTxPin = 9;
+        void enableTransmit(bool state);
+
+        static const uint8_t _analogInputs = 4;
+        float    _analogGains[_analogInputs]    = {1.0, 1.0, 1.0, 1.0};
+        float    _analogOffsets[_analogInputs]  = {0.0, 0.0, 0.0, 0.0};
+        float    _analogAverage[_analogInputs]  = {0.0, 0.0, 0.0, 0.0};
+        uint32_t _averageSum[_analogInputs]     = {0, 0, 0, 0};
+        uint32_t _averageTime_ms[_analogInputs] = {0, 0, 0, 0};
+        uint32_t _averageCounter[_analogInputs] = {0, 0, 0, 0};
+        uint32_t _averageType[_analogInputs]    = {0, 0, 0, 0};
+        uint32_t _averageValue[_analogInputs]   = {0, 0, 0, 0};
+
+        static constexpr float _voltageConversion = 0.0053; //(53.0/10.0)/1000.0
+        static const uint32_t _digitalThreshold = 1600;
+
         static const uint8_t _button = 2;
         static const uint32_t _debounceTime_ms = 250;
-        bool _buttonPressed = false;
+        bool _buttonPressed;
+
+        static const uint8_t _rxTxPin = 9;
+        uint32_t _timeout;
+        uint32_t _timeoutCache;
+        char _startCharacter;
+        char _endCharacter;
+        char _receivedCharacter;
+        uint8_t _receivedCharacterIndex;
+        bool _useStartCharacter;
+        bool _dataReady;
+        bool _receivingData;
+        bool _timedOut;
+        static const uint8_t _maxCharacters = 200;
+        char _receivedCharacters[_maxCharacters];
+
         HardwareSerial* _serial = &Serial0;
 };
 
