@@ -1,19 +1,32 @@
 #include "esc3b04.h"
 
 esc3b04 plc;
+uint32_t timer_ms;
 
 void setup() {
   plc.init();
-  plc.setAnalogCalibration(Vi4, 10.0, 1.0, TIME_MS, 100);
+  if(plc.setAnalogParameters(Vi1, 10.0, 1.0, TIME_MS, 2000) == -1){
+    plc.println("Vi1 init error.");
+  }
+  plc.setAnalogParameters(Vi2, 20.0, 1.0, TIME_MS, 5000);
+  plc.setAnalogParameters(Vi3, 100.0, 1.0, READINGS, 10000);
+  plc.setAnalogParameters(Vi4, 200.0, 1.0, READINGS, 5000);
+  plc.println("");
+  timer_ms = millis();
 }
 
 void loop() {
   plc.engine();
-  if (plc.getDataReady()) {
-    if(strcmp(plc.getReceivedCharacters(), "Vi1") == 0) plc.println(plc.getAnalogInput(Vi1));
-    if(strcmp(plc.getReceivedCharacters(), "Vi2") == 0) plc.println(plc.getAnalogInput(Vi2));
-    if(strcmp(plc.getReceivedCharacters(), "Vi3") == 0) plc.println(plc.getAnalogInput(Vi3));
-    if(strcmp(plc.getReceivedCharacters(), "Vi4") == 0) plc.println(plc.getAnalogInput(Vi4));
-    if(strcmp(plc.getReceivedCharacters(), "Vi5") == 0) plc.println(plc.getAnalogInput(5));
+  if (millis() - timer_ms > 1000) {
+    plc.printf("Vi1: %0.02fV\n\r",plc.getAnalogAverage(Vi1));
+    //plc.println(plc.getAnalogAverage(Vi1));
+    plc.print("Vi2: ");
+    plc.println(plc.getAnalogAverage(Vi2));
+    plc.print("Vi3: ");
+    plc.println(plc.getAnalogAverage(Vi3));
+    plc.print("Vi4: ");
+    plc.println(plc.getAnalogAverage(Vi4));
+    plc.println("");
+    timer_ms = millis();
   }
 }

@@ -70,11 +70,23 @@ void esc3b04::systemInit(){
     _timedOut = false;
 }
 
-int8_t esc3b04::setAnalogParameters(uint8_t input, float gain, float offset){
+uint8_t esc3b04::getInputIndex(inputs input){
+    uint8_t returnValue = 0xFF;
+    for(uint8_t i = 0; i < _analogInputs; i++){
+        if(input == _analogPins[i]) return i;
+    }
+}
+
+int8_t esc3b04::setAnalogParameters(inputs input, float gain, float offset, engineAverageType type, uint32_t value){
     int8_t returnValue = -1;
-    if(input >=Vi1 &&  input <= Vi4){
-        _analogGains[input]   = gain;
-        _analogOffsets[input] = offset;
+    uint8_t index = getInputIndex(input);
+    if(index != 0xFF){
+        _analogGains[index] = gain;
+        _analogOffsets[index] = offset;
+        _averageType[index] = type;
+        _averageValue[index] = value;
+        _averageCounter[index] = 0;
+        _averageTime_ms[index] = millis();
         returnValue = 1;
     }
     return returnValue;
@@ -120,7 +132,7 @@ int8_t esc3b04::getOutputs(){
 
 int8_t esc3b04::getDigitalInput(uint8_t input){
     int8_t returnValue = -1;
-    if(input >=Vi1 &&  input <= Vi4){
+    if(input >=Vi1 && input <= Vi4){
         returnValue = analogReadMilliVolts(input) > _digitalThreshold;
     }
     return returnValue;
@@ -135,10 +147,23 @@ int8_t esc3b04::getDigitalInputs(){
     return returnValue;
 }
 
-float esc3b04::getAnalogInput(uint8_t input){
-    float returnValue = -1234567.0;
-    if(input >=Vi1 &&  input <= Vi4){
-        returnValue = (analogReadMilliVolts(input) * _voltageConversion * _analogGains[input]) + _analogOffsets[input];
+float esc3b04::getAnalogInput(inputs input){
+    float returnValue = -11111.0;
+    uint8_t index = getInputIndex(input);
+    if(index != 0xFF){
+        returnValue = (analogReadMilliVolts(index) * _voltageConversion * _analogGains[index]) + _analogOffsets[index];
+    }
+    return returnValue;
+}
+
+float esc3b04::getAnalogAverage(inputs input){
+    float returnValue = -11111.0;
+    uint8_t index = getInputIndex(input);
+    if(index != 0xFF){
+        returnValue = -9999.0;
+        if(_averageType[index] > AVG_DISABLED){
+            returnValue = _analogAverage[index];
+        }
     }
     return returnValue;
 }
@@ -177,26 +202,34 @@ void esc3b04::engineButton(){
 
 
 void esc3b04::engineAnalogAverage(){
-    bool valueReached = false;
-    if (_system.analogAverageType == TIME_MS) {
-        if (millis() - _averageTime_ms[_system.analogPinIterator] > _analogAverageValue) {
-                valueReached = true;
-                _averageTime_ms[_system.analogPinIterator] = millis();
+    for(uint8_t i =0; i < _analogInputs; i++){
+        if(_averageType[i] == TIME_MS){
+            if(millis() - _averageTime_ms[i] >= _averageValue[i]){
+                _averageDone[i] = true;
+            }
+        }//
+        else if(_averageType[i] == READINGS){
+            if(_averageCounter[i] >= _averageValue[i]){
+                _averageDone[i] = true;
+            }
         }
-    }
-    else if (_system.analogAverageType == READINGS) {
-        if (_averageCounter[_system.analogPinIterator] >= _analogAverageValue) {
-            valueReached = true;
+
+        if(_averageDone[i] == true ){
+            if(_averageCounter[i] > 0){
+                _analogAverage[i] = (((float)_averageSum[i]/(float)_averageCounter[i]) * _voltageConversion * _analogGains[i]) + _analogOffsets[i];
+            }//
+            else{
+                _analogAverage[i] = 0;
+            }
+            _averageCounter[i] = 0;
+            _averageSum[i] = 0;
+            _averageDone[i] = false;
+            _averageTime_ms[i] = millis();
+        }//
+        else if(_averageType[i] != AVG_DISABLED){
+            _averageSum[i] += analogReadMilliVolts(_analogPins[i]);
+            _averageCounter[i]++;
         }
-    }
-    if(valueReached == true){
-        _averageAnalog[_system.analogPinIterator] = (float)_averageSum[_system.analogPinIterator] / _averageCounter[_system.analogPinIterator];
-        _averageSum[_system.analogPinIterator] = 0;
-        _averageCounter[_system.analogPinIterator] = 0;
-    } 
-    else {
-        _averageSum[_system.analogPinIterator] += analogRead(pgm_read_byte(&_analogInputPins[_system.analogPinIterator]));
-        _averageCounter[_system.analogPinIterator]++;
     }
 }
 

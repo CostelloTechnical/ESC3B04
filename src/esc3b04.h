@@ -43,7 +43,7 @@ enum outputs : uint8_t {
 };
 
 enum engineAverageType : uint8_t{
-    DISABLED = 0,
+    AVG_DISABLED = 0,
     TIME_MS = 1,
     READINGS = 2
 };
@@ -64,6 +64,15 @@ class esc3b04 {
         size_t print(T data) {
             enableTransmit(true);
             size_t bytesWritten = _serial->print(data);
+            _serial->flush();
+            enableTransmit(false);
+            return bytesWritten;
+        }
+
+        template<typename... Args>
+        size_t printf(const char* format, Args&&... args) {
+            enableTransmit(true);
+            size_t bytesWritten = _serial->printf(format, std::forward<Args>(args)...);
             _serial->flush();
             enableTransmit(false);
             return bytesWritten;
@@ -93,7 +102,7 @@ class esc3b04 {
         template<typename T>
         size_t available(T data) {return _serial->available(data);}
 
-        int8_t setAnalogParameters(uint8_t input, float gain, float offset, );
+        int8_t setAnalogParameters(inputs input, float gain, float offset, engineAverageType type, uint32_t value);
 
         int8_t setOutput(uint8_t output, bool state);
         int8_t getOutput(uint8_t output);
@@ -103,7 +112,8 @@ class esc3b04 {
 
         int8_t getDigitalInput(uint8_t input);
         int8_t getDigitalInputs();
-        float getAnalogInput(uint8_t input);
+        float getAnalogInput(inputs input);
+        float getAnalogAverage(inputs input);
 
         bool getButtonPressed();
 
@@ -122,16 +132,19 @@ class esc3b04 {
         void engine();
     private:
         void enableTransmit(bool state);
+        uint8_t getInputIndex(inputs input);
 
         static const uint8_t _analogInputs = 4;
+        uint8_t  _analogPins[_analogInputs]     = {Vi1, Vi2, Vi3, Vi4};
         float    _analogGains[_analogInputs]    = {1.0, 1.0, 1.0, 1.0};
         float    _analogOffsets[_analogInputs]  = {0.0, 0.0, 0.0, 0.0};
         float    _analogAverage[_analogInputs]  = {0.0, 0.0, 0.0, 0.0};
         uint32_t _averageSum[_analogInputs]     = {0, 0, 0, 0};
         uint32_t _averageTime_ms[_analogInputs] = {0, 0, 0, 0};
         uint32_t _averageCounter[_analogInputs] = {0, 0, 0, 0};
-        uint32_t _averageType[_analogInputs]    = {0, 0, 0, 0};
+        uint32_t _averageType[_analogInputs]    = {0, 0, 0, 0}; // 0 = DISABLED.
         uint32_t _averageValue[_analogInputs]   = {0, 0, 0, 0};
+        bool     _averageDone[_analogInputs]    = {false, false, false, false};  
 
         static constexpr float _voltageConversion = 0.0053; //(53.0/10.0)/1000.0
         static const uint32_t _digitalThreshold = 1600;
