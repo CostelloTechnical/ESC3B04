@@ -77,8 +77,8 @@ uint8_t esc3b04::getInputIndex(inputs input){
     }
 }
 
-int8_t esc3b04::setAnalogParameters(inputs input, float gain, float offset, engineAverageType type, uint32_t value){
-    int8_t returnValue = -1;
+uint8_t esc3b04::setAnalogParameters(inputs input, float gain, float offset, engineAverageType type, uint32_t value){
+    uint8_t returnValue = 0xFF;
     uint8_t index = getInputIndex(input);
     if(index != 0xFF){
         _analogGains[index] = gain;
@@ -92,8 +92,8 @@ int8_t esc3b04::setAnalogParameters(inputs input, float gain, float offset, engi
     return returnValue;
 }
 
-int8_t esc3b04::setOutput(uint8_t output, bool state){
-    int8_t returnValue = -1;
+uint8_t esc3b04::setOutput(uint8_t output, bool state){
+    uint8_t returnValue = 0xFF;
     if(output == CH1 || output == CH2 || output == CH3 || output == CH4 ){
         digitalWrite(output, state);
         returnValue = 1;
@@ -101,16 +101,16 @@ int8_t esc3b04::setOutput(uint8_t output, bool state){
     return returnValue;
 }
 
-int8_t esc3b04::getOutput(uint8_t output){
-    int8_t returnValue = -1;
+uint8_t esc3b04::getOutput(uint8_t output){
+    uint8_t returnValue = 0xFF;
     if(output == CH1 || output == CH2 || output == CH3 || output == CH4 ){
         returnValue = digitalRead(output);
     }
     return returnValue;
 }
 
-int8_t esc3b04::setOutputs(uint8_t outputs){
-    int8_t returnValue = -1;
+uint8_t esc3b04::setOutputs(uint8_t outputs){
+    uint8_t returnValue = 0xFF;
     if(outputs <= 15){
         digitalWrite(CH1, outputs & (1 << 0));
         digitalWrite(CH2, outputs & (1 << 1));
@@ -121,8 +121,8 @@ int8_t esc3b04::setOutputs(uint8_t outputs){
 }
 
 
-int8_t esc3b04::getOutputs(){
-    int8_t returnValue = 0;
+uint8_t esc3b04::getOutputs(){
+    uint8_t returnValue = 0;
     returnValue |= (digitalRead(CH1) << 0);
     returnValue |= (digitalRead(CH2) << 1);
     returnValue |= (digitalRead(CH3) << 2);
@@ -130,16 +130,16 @@ int8_t esc3b04::getOutputs(){
     return returnValue;
 }
 
-int8_t esc3b04::getDigitalInput(uint8_t input){
-    int8_t returnValue = -1;
+uint8_t esc3b04::getDigitalInput(uint8_t input){
+    uint8_t returnValue = 0xFF;
     if(input >=Vi1 && input <= Vi4){
         returnValue = analogReadMilliVolts(input) > _digitalThreshold;
     }
     return returnValue;
 }
 
-int8_t esc3b04::getDigitalInputs(){
-    int8_t returnValue = 0;
+uint8_t esc3b04::getDigitalInputs(){
+    uint8_t returnValue = 0;
     returnValue |= ((analogReadMilliVolts(Vi1) > _digitalThreshold) << 0);
     returnValue |= ((analogReadMilliVolts(Vi2) > _digitalThreshold) << 1);
     returnValue |= ((analogReadMilliVolts(Vi3) > _digitalThreshold) << 2);
@@ -166,6 +166,10 @@ float esc3b04::getAnalogAverage(inputs input){
         }
     }
     return returnValue;
+}
+
+void esc3b04::setButtonDebounce(uint32_t debounce_ms){
+    _debounceTime_ms = debounce_ms;
 }
 
 bool esc3b04::getButtonPressed(){

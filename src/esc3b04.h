@@ -102,19 +102,20 @@ class esc3b04 {
         template<typename T>
         size_t available(T data) {return _serial->available(data);}
 
-        int8_t setAnalogParameters(inputs input, float gain, float offset, engineAverageType type, uint32_t value);
+        uint8_t setAnalogParameters(inputs input, float gain, float offset, engineAverageType type, uint32_t value);
 
-        int8_t setOutput(uint8_t output, bool state);
-        int8_t getOutput(uint8_t output);
+        uint8_t setOutput(uint8_t output, bool state);
+        uint8_t getOutput(uint8_t output);
 
-        int8_t setOutputs(uint8_t outputs);
-        int8_t getOutputs();
+        uint8_t setOutputs(uint8_t outputs);
+        uint8_t getOutputs();
 
-        int8_t getDigitalInput(uint8_t input);
-        int8_t getDigitalInputs();
+        uint8_t getDigitalInput(uint8_t input);
+        uint8_t getDigitalInputs();
         float getAnalogInput(inputs input);
         float getAnalogAverage(inputs input);
 
+        void setButtonDebounce(uint32_t debounce_ms);
         bool getButtonPressed();
 
         // Returns true if the communication engine received a valid message.
@@ -150,7 +151,7 @@ class esc3b04 {
         static const uint32_t _digitalThreshold = 1600;
 
         static const uint8_t _button = 2;
-        static const uint32_t _debounceTime_ms = 250;
+        uint32_t _debounceTime_ms = 250;
         bool _buttonPressed;
 
         static const uint8_t _rxTxPin = 9;
