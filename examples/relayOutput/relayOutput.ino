@@ -11,23 +11,22 @@ void loop() {
     plc.engine();
     if(plc.getButtonPressed()){
         switch (outputSelector){
-            outputSelector++;
+            case 0:
+                plc.setOutput(CH1, HIGH);
+                break;
             case 1:
-                plc.setOutput(Vi1, HIGH);
+                plc.setOutput(CH2, HIGH);
                 break;
             case 2:
-                plc.setOutput(Vi2, HIGH);
+                plc.setOutput(CH3, HIGH);
                 break;
             case 3:
-                plc.setOutput(Vi3, HIGH);
+                plc.setOutput(CH4, HIGH);
                 break;
             case 4:
-                plc.setOutput(Vi4, HIGH);
-                break;
-            case 5:
                 plc.setOutputs(0);
-                outputSelector = 0;
                 break;
         }
+        outputSelector = (outputSelector < 4) ? outputSelector + 1 : 0; 
     }
 }

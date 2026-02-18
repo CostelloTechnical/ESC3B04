@@ -1,3 +1,7 @@
+/*
+This example shows how to use the button functions.
+A count
+*/
 #include "esc3b04.h"
 
 esc3b04 plc;
@@ -5,7 +9,7 @@ uint8_t outputSelector = 0;
 
 void setup() {
     plc.init();
-    plc.setButtonDebounce(250);
+    plc.setButtonDebounce(50);
 }
 
 void loop() {

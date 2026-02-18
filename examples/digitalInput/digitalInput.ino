@@ -15,11 +15,13 @@ void loop() {
         plc.print("Vi1 = ");
         plc.println(plc.getDigitalInput(Vi1));
 
-        plc.printf("Vi2 = %d\n\r", plc.getDigitalInput(Vi1));
+        plc.printf("Vi2 = %d\n\r", plc.getDigitalInput(Vi2));
 
         plc.print("Vi3 = ");
-        plc.println(newInputsValue & (1 << 2));
+        plc.println(bitRead(newInputsValue, 2));
 
-        plc.printf("Vi4 = %d\n\r", newInputsValue & (1 << 3));
+        plc.printf("Vi4 = %d\n\r", bitRead(newInputsValue, 3));
+
+        plc.println("");
     }
 }
