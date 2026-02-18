@@ -5,7 +5,7 @@ uint32_t printTimer_ms;
 
 void setup() {
   plc.init();
-  plc.setAnalogParameters(Vi1, 1.0, 0.0, AVG_DIABLED, 2000);
+  plc.setAnalogParameters(Vi1, 1.0, 0.0, AVG_DISABLED, 2000); // AVG_
   plc.setAnalogParameters(Vi2, 1.0, 0.0, TIME_MS, 5000);
   plc.setAnalogParameters(Vi3, 1.0, 0.0, READINGS, 10000);
   plc.setAnalogParameters(Vi4, 1.0, 0.0, READINGS, 5000);

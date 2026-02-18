@@ -5,6 +5,7 @@ uint8_t outputSelector = 0;
 
 void setup() {
     plc.init();
+    plc.setButtonDebounce(250);
 }
 
 void loop() {
