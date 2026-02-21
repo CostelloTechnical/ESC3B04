@@ -28,7 +28,7 @@
 
 #ifndef ESC3B04_h
 #define ESC3B04_h
-#include <HardwareSerial.h>
+#include <Arduino.h>
 
 /**
  * @brief Maps analogue input channel names to their GPIO pin numbers.
